@@ -1752,6 +1752,8 @@ function updateDots(n) {
 }
 
 // ── NAVIGATION ──
+const EASE = 'transform .42s cubic-bezier(.36,.07,.19,.97)';
+
 function goTo(next) {
   if (animating || next === cur || next < 0 || next >= TOTAL) return;
   animating = true;
@@ -1761,29 +1763,26 @@ function goTo(next) {
   const scrNext = document.getElementById('s' + next);
   const forward = next > prev;
 
-  // Reset next screen to off-screen start
+  // Instantly position next screen off-screen (no transition)
   scrNext.style.transition = 'none';
-  scrNext.style.transform  = forward ? 'translateX(105%)' : 'translateX(-28%)';
-  scrNext.classList.remove('active', 'prev');
+  scrNext.style.transform  = forward ? 'translateX(105%)' : 'translateX(-105%)';
 
   requestAnimationFrame(() => requestAnimationFrame(() => {
-    scrNext.style.transition = '';
-    scrPrev.classList.remove('active');
-    scrPrev.classList.add(forward ? 'prev' : '');
-    if (!forward) {
-      scrPrev.style.transform = 'translateX(105%)';
-      scrPrev.style.transition = 'transform .42s cubic-bezier(.36,.07,.19,.97)';
-    }
-    scrNext.classList.add('active');
+    // Animate next screen into view (inline styles only — no CSS class conflict)
+    scrNext.style.transition = EASE;
+    scrNext.style.transform  = 'translateX(0)';
+
+    // Animate previous screen out
+    scrPrev.style.transition = EASE;
+    scrPrev.style.transform  = forward ? 'translateX(-28%)' : 'translateX(105%)';
+
     cur = next;
     updateDots(next);
 
     setTimeout(() => {
-      scrPrev.classList.remove('prev');
-      if (!forward) {
-        scrPrev.style.transform = '';
-        scrPrev.style.transition = '';
-      }
+      // Reset prev off-screen right (no animation) so it's ready for reuse
+      scrPrev.style.transition = 'none';
+      scrPrev.style.transform  = 'translateX(105%)';
       animating = false;
       onScreenEnter(next);
     }, 460);
@@ -1942,5 +1941,7 @@ const io = new IntersectionObserver((entries) => {
 cards.forEach(c => io.observe(c));
 
 // ── INIT ──
+// Use inline style so s0 is visible consistently with the goTo() inline-style approach
+document.getElementById('s0').style.transform = 'translateX(0)';
 updateDots(0);
 </script>
