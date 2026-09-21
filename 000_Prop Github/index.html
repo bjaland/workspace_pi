@@ -99,7 +99,7 @@ body {
 
 /* ── PHONE FRAME ─── */
 .phone {
-  width: min(320px, 82vw);
+  width: min(320px, calc(100vw - 2rem - 132px)); /* 132px = 2×42px btn + 2×1.5rem gap */
   aspect-ratio: 390 / 844;
   background: #1a1a1a;
   border-radius: 50px;
@@ -1270,6 +1270,7 @@ body {
 @media (max-width: 600px) {
   .stage { gap: 0.75rem; }
   .nav-btn { width: 36px; height: 36px; font-size: 0.9rem; }
+  .phone { width: min(320px, calc(100vw - 2rem - 96px)); } /* 96px = 2×36px btn + 2×0.75rem gap */
   .showcase-grid { grid-template-columns: 1fr 1fr; }
 }
 @media (max-width: 420px) {
