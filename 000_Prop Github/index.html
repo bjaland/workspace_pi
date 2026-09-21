@@ -807,66 +807,13 @@ body {
 .activity-amount.neg { color: #111; }
 
 /* ── SCREEN: AHORRO ─── */
-.ahorro-hero {
-  background: var(--p);
-  padding: 50px 20px 24px;
-  position: relative;
-  overflow: hidden;
-}
-.ahorro-hero::before {
-  content: '';
-  position: absolute;
-  right: -40px; bottom: -60px;
-  width: 180px; height: 180px;
-  border-radius: 50%;
-  background: rgba(255,255,255,.07);
-}
-.ahorro-hero-header {
-  display: flex; align-items: center; gap: 10px;
-  margin-bottom: 16px;
-}
-.ahorro-back {
-  width: 28px; height: 28px;
-  border-radius: 50%;
-  background: rgba(255,255,255,.2);
-  display: flex; align-items: center; justify-content: center;
-  color: white;
-  font-size: 0.8rem;
-  cursor: pointer;
-}
-.ahorro-hero-title {
-  font-size: 0.82rem;
-  color: rgba(255,255,255,.8);
-  font-weight: 500;
-}
-.ahorro-hero-img {
-  position: absolute;
-  right: 0; top: 0; bottom: 0;
-  width: 45%;
-  background: linear-gradient(to bottom left, rgba(255,150,200,.25), rgba(200,0,100,.35));
-  display: flex; align-items: center; justify-content: center;
-  overflow: hidden;
-}
-.person-ahorro {
-  width: 90%; height: 90%;
-  background: linear-gradient(160deg, #FFAAD4, #C4006A);
-  border-radius: 40% 40% 0 0;
-  position: relative;
-  margin-bottom: 0;
-}
-.person-ahorro::before {
-  content: '';
-  position: absolute;
-  top: 12%; left: 50%;
-  transform: translateX(-50%);
-  width: 42%; height: 28%;
-  background: #FFD0E8;
-  border-radius: 50%;
-}
 
+.ahorro-total-card {
+  padding: 20px 20px 4px;
+}
 .ahorro-total-label {
   font-size: 0.72rem;
-  color: rgba(255,255,255,.75);
+  color: var(--text2);
   margin-bottom: 4px;
 }
 .ahorro-total-amount {
@@ -909,20 +856,20 @@ body {
   align-items: center;
   font-size: 2.6rem;
   font-weight: 700;
-  color: white;
+  color: #111;
   letter-spacing: -0.04em;
   font-variant-numeric: tabular-nums;
 }
 .od-punct {
   font-size: 2.6rem;
   font-weight: 700;
-  color: white;
+  color: #111;
   letter-spacing: -0.04em;
 }
 .od-euro {
   font-size: 1.4rem;
   font-weight: 700;
-  color: rgba(255,255,255,.75);
+  color: #111;
   margin-left: 4px;
   align-self: flex-start;
   margin-top: 8px;
@@ -930,7 +877,7 @@ body {
 
 .ahorro-hero-sub {
   font-size: 0.72rem;
-  color: rgba(255,255,255,.65);
+  color: var(--text2);
   margin-top: 6px;
   line-height: 1.4;
 }
@@ -1636,21 +1583,22 @@ body {
 
           <!-- 5: AHORRO -->
           <div class="scr" id="s5" style="background:#fff">
-            <div class="ahorro-hero">
-              <div class="sbar sbar-dark" style="padding-top:8px">
-                <span class="sbar-time">9:41</span>
-                <div class="sbar-icons">
-                  <svg width="17" height="12" viewBox="0 0 17 12" fill="white"><rect x="0" y="4" width="3" height="8" rx="1"/><rect x="4" y="2" width="3" height="10" rx="1"/><rect x="8" y="0" width="3" height="12" rx="1"/></svg>
-                  <svg width="25" height="12" viewBox="0 0 25 12" fill="white"><rect x="0" y="1" width="21" height="10" rx="2.5" fill="none" stroke="white" stroke-width="1"/><rect x="1.5" y="2.5" width="15" height="7" rx="1.5" fill="white"/><rect x="22" y="3.5" width="3" height="5" rx="1" fill="white" opacity=".5"/></svg>
-                </div>
+            <div class="sbar">
+              <span class="sbar-time">9:41</span>
+              <div class="sbar-icons">
+                <svg width="17" height="12" viewBox="0 0 17 12" fill="#111"><rect x="0" y="4" width="3" height="8" rx="1"/><rect x="4" y="2" width="3" height="10" rx="1"/><rect x="8" y="0" width="3" height="12" rx="1"/><rect x="12" y="0" width="3" height="12" rx="1" opacity=".3"/></svg>
+                <svg width="16" height="12" viewBox="0 0 16 12" fill="#111"><path d="M8 2.4C10.7 2.4 13.1 3.5 14.8 5.3L16 4.1C13.9 1.9 11.1.6 8 .6 4.9.6 2.1 1.9 0 4.1l1.2 1.2C2.9 3.5 5.3 2.4 8 2.4z"/><path d="M8 5.6c1.8 0 3.4.7 4.6 1.9l1.2-1.2C12.2 4.6 10.2 3.8 8 3.8c-2.2 0-4.2.8-5.8 2.5l1.2 1.2C4.6 6.3 6.2 5.6 8 5.6z"/><circle cx="8" cy="10" r="2"/></svg>
+                <svg width="25" height="12" viewBox="0 0 25 12" fill="#111"><rect x="0" y="1" width="21" height="10" rx="2.5" fill="none" stroke="#111" stroke-width="1"/><rect x="1.5" y="2.5" width="15" height="7" rx="1.5" fill="#111"/><rect x="22" y="3.5" width="3" height="5" rx="1" fill="#111" opacity=".5"/></svg>
               </div>
-              <div class="ahorro-hero-img">
-                <div class="person-ahorro"></div>
-              </div>
-              <div class="ahorro-hero-header">
-                <div class="ahorro-back" onclick="goTo(4)">‹</div>
-                <span class="ahorro-hero-title">ahorro</span>
-              </div>
+            </div>
+            <div class="onboard-top">
+              <button class="back-btn" onclick="goTo(4)">‹</button>
+              <span class="step-label">mis finanzas</span>
+            </div>
+            <div class="onboard-logo-row">
+              <span class="onboard-logo">twelve<span style="font-size:.65em;vertical-align:super">.</span></span>
+            </div>
+            <div class="ahorro-total-card">
               <div class="ahorro-total-label">Ahorro total</div>
               <div class="ahorro-total-amount">
                 <div class="odometer" id="odometer">
@@ -1658,7 +1606,7 @@ body {
                 </div>
                 <span class="od-euro">€</span>
               </div>
-              <div class="ahorro-hero-sub">Incluye lo invertido en tus causas. El rendimiento,<br>pasado no garantiza el futuro.</div>
+              <div class="ahorro-hero-sub">Incluye lo invertido en tus causas. El rendimiento pasado no garantiza el futuro.</div>
             </div>
             <div class="ahorro-body">
               <div class="ahorro-row" id="ar1">
