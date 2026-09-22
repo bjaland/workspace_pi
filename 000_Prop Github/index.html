@@ -1322,6 +1322,35 @@ body {
 }
 .cs-btn.cs-active .cs-btn-circle { background: #EF0080; border-color: #EF0080; color: white; }
 .cs-btn-label { font-size: .62rem; font-weight: 600; color: #444; text-align: center; max-width: 60px; line-height: 1.2; }
+/* ── CAUSA TINDER STAMPS ── */
+.cs-stamp {
+  position: absolute;
+  top: 88px;
+  padding: 8px 18px;
+  border-radius: 8px;
+  font-size: 1.3rem;
+  font-weight: 800;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 10;
+  border: 4px solid;
+  background: rgba(255,255,255,.1);
+  transition: opacity .05s;
+}
+.cs-stamp-like {
+  left: 24px;
+  color: #4CAF50;
+  border-color: #4CAF50;
+  transform: rotate(-15deg);
+}
+.cs-stamp-nope {
+  right: 24px;
+  color: #fff;
+  border-color: rgba(255,255,255,.8);
+  transform: rotate(15deg);
+}
 
 /* Logo image in causa screens */
 .cs-logo-img { height: 20px; width: auto; display: block; }
@@ -1640,6 +1669,8 @@ body {
 
           <!-- 6: Energía limpia. -->
           <div class="scr" id="s6" style="background:#EF0080; overflow:hidden;">
+            <div class="cs-stamp cs-stamp-like">♥ FAVORITO</div>
+            <div class="cs-stamp cs-stamp-nope">✕ PASO</div>
             <div class="sbar sbar-dark">
             <span class="sbar-time">9:41</span>
             <div class="sbar-icons">
@@ -1662,15 +1693,15 @@ body {
             <div class="cs-actions-wrap">
               <div class="cs-swipe-hint">← Desliza para decidir →</div>
               <div class="cs-btns">
-                <div class="cs-btn" onclick="goTo(4)">
+                <div class="cs-btn" onclick="swipeNope()">
                   <div class="cs-btn-circle">✕</div>
                   <div class="cs-btn-label">Por ahora no</div>
                 </div>
-                <div class="cs-btn cs-active">
+                <div class="cs-btn cs-active" onclick="swipeLike()">
                   <div class="cs-btn-circle">♥</div>
                   <div class="cs-btn-label">Favorito</div>
                 </div>
-                <div class="cs-btn">
+                <div class="cs-btn" onclick="swipeLike()">
                   <div class="cs-btn-circle">→</div>
                   <div class="cs-btn-label">Me interesa</div>
                 </div>
@@ -1680,6 +1711,8 @@ body {
 
           <!-- 7: Gestión del agua. -->
           <div class="scr" id="s7" style="background:#EF0080; overflow:hidden;">
+            <div class="cs-stamp cs-stamp-like">♥ FAVORITO</div>
+            <div class="cs-stamp cs-stamp-nope">✕ PASO</div>
             <div class="sbar sbar-dark">
             <span class="sbar-time">9:41</span>
             <div class="sbar-icons">
@@ -1702,15 +1735,15 @@ body {
             <div class="cs-actions-wrap">
               <div class="cs-swipe-hint">← Desliza para decidir →</div>
               <div class="cs-btns">
-                <div class="cs-btn" onclick="goTo(4)">
+                <div class="cs-btn" onclick="swipeNope()">
                   <div class="cs-btn-circle">✕</div>
                   <div class="cs-btn-label">Por ahora no</div>
                 </div>
-                <div class="cs-btn cs-active">
+                <div class="cs-btn cs-active" onclick="swipeLike()">
                   <div class="cs-btn-circle">♥</div>
                   <div class="cs-btn-label">Favorito</div>
                 </div>
-                <div class="cs-btn">
+                <div class="cs-btn" onclick="swipeLike()">
                   <div class="cs-btn-circle">→</div>
                   <div class="cs-btn-label">Me interesa</div>
                 </div>
@@ -1720,6 +1753,8 @@ body {
 
           <!-- 8: Brecha digital. -->
           <div class="scr" id="s8" style="background:#EF0080; overflow:hidden;">
+            <div class="cs-stamp cs-stamp-like">♥ FAVORITO</div>
+            <div class="cs-stamp cs-stamp-nope">✕ PASO</div>
             <div class="sbar sbar-dark">
             <span class="sbar-time">9:41</span>
             <div class="sbar-icons">
@@ -1742,15 +1777,15 @@ body {
             <div class="cs-actions-wrap">
               <div class="cs-swipe-hint">← Desliza para decidir →</div>
               <div class="cs-btns">
-                <div class="cs-btn" onclick="goTo(4)">
+                <div class="cs-btn" onclick="swipeNope()">
                   <div class="cs-btn-circle">✕</div>
                   <div class="cs-btn-label">Por ahora no</div>
                 </div>
-                <div class="cs-btn cs-active">
+                <div class="cs-btn cs-active" onclick="swipeLike()">
                   <div class="cs-btn-circle">♥</div>
                   <div class="cs-btn-label">Favorito</div>
                 </div>
-                <div class="cs-btn">
+                <div class="cs-btn" onclick="swipeLike()">
                   <div class="cs-btn-circle">→</div>
                   <div class="cs-btn-label">Me interesa</div>
                 </div>
@@ -1760,6 +1795,8 @@ body {
 
           <!-- 9: Exclusión social. -->
           <div class="scr" id="s9" style="background:#EF0080; overflow:hidden;">
+            <div class="cs-stamp cs-stamp-like">♥ FAVORITO</div>
+            <div class="cs-stamp cs-stamp-nope">✕ PASO</div>
             <div class="sbar sbar-dark">
             <span class="sbar-time">9:41</span>
             <div class="sbar-icons">
@@ -1782,15 +1819,15 @@ body {
             <div class="cs-actions-wrap">
               <div class="cs-swipe-hint">← Desliza para decidir →</div>
               <div class="cs-btns">
-                <div class="cs-btn" onclick="goTo(4)">
+                <div class="cs-btn" onclick="swipeNope()">
                   <div class="cs-btn-circle">✕</div>
                   <div class="cs-btn-label">Por ahora no</div>
                 </div>
-                <div class="cs-btn cs-active">
+                <div class="cs-btn cs-active" onclick="swipeLike()">
                   <div class="cs-btn-circle">♥</div>
                   <div class="cs-btn-label">Favorito</div>
                 </div>
-                <div class="cs-btn">
+                <div class="cs-btn" onclick="swipeLike()">
                   <div class="cs-btn-circle">→</div>
                   <div class="cs-btn-label">Me interesa</div>
                 </div>
@@ -1933,7 +1970,7 @@ document.addEventListener('keydown', e => {
 
 // Touch swipe
 let touchX = null;
-document.getElementById('phone').addEventListener('touchstart', e => { touchX = e.touches[0].clientX; }, { passive: true });
+document.getElementById('phone').addEventListener('touchstart', e => { if (cur >= 6 && cur <= 9) return; touchX = e.touches[0].clientX; }, { passive: true });
 document.getElementById('phone').addEventListener('touchend', e => {
   if (touchX === null) return;
   const dx = e.changedTouches[0].clientX - touchX;
@@ -2051,6 +2088,110 @@ function animateAhorro() {
 }
 
 
+
+
+// ── CAUSA TINDER SWIPE ──
+const CAUSA_NEXT   = {6: 7, 7: 8, 8: 9, 9: 4};
+const SWIPE_THRESH = 90;
+const ROT_FACTOR   = 0.07;
+
+function causaSwipeExit(scrIdx, direction, nextIdx) {
+  if (animating) return;
+  animating = true;
+
+  const scrEl   = document.getElementById('s' + scrIdx);
+  const scrNext = document.getElementById('s' + nextIdx);
+
+  // Fly current card out with rotation
+  const flyX   = direction > 0 ? '140%' : '-140%';
+  const flyRot = direction > 0 ? 28 : -28;
+  scrEl.style.transition = 'transform .45s cubic-bezier(.3,.1,.6,1)';
+  scrEl.style.transform  = 'translateX(' + flyX + ') rotate(' + flyRot + 'deg)';
+
+  // Slide next screen in
+  const fromX = nextIdx > scrIdx ? '105%' : '-105%';
+  scrNext.style.transition = 'none';
+  scrNext.style.transform  = 'translateX(' + fromX + ')';
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    scrNext.style.transition = EASE;
+    scrNext.style.transform  = 'translateX(0)';
+  }));
+
+  cur = nextIdx;
+  updateDots(nextIdx);
+
+  setTimeout(() => {
+    scrEl.style.transition = 'none';
+    scrEl.style.transform  = 'translateX(105%)';
+    scrEl.querySelectorAll('.cs-stamp').forEach(s => { s.style.opacity = 0; });
+    animating = false;
+    onScreenEnter(nextIdx);
+  }, 480);
+}
+
+function swipeLike() { if (cur >= 6 && cur <= 9) causaSwipeExit(cur, 1, CAUSA_NEXT[cur]); }
+function swipeNope() { if (cur >= 6 && cur <= 9) causaSwipeExit(cur, -1, 4); }
+
+// Drag per causa screen
+[6, 7, 8, 9].forEach(idx => {
+  const el        = document.getElementById('s' + idx);
+  const likeStamp = el.querySelector('.cs-stamp-like');
+  const nopeStamp = el.querySelector('.cs-stamp-nope');
+  let startX  = null;
+  let startY  = null;
+  let isDrag  = false;
+  let axisSet = false;
+
+  function dragStart(x, y) {
+    if (animating) return;
+    startX = x; startY = y; isDrag = true; axisSet = false;
+    el.style.transition = 'none';
+  }
+
+  function dragMove(x, y) {
+    if (!isDrag || startX === null) return;
+    const dx = x - startX;
+    const dy = y - startY;
+    if (!axisSet) {
+      if (Math.abs(dy) > Math.abs(dx) + 8) { isDrag = false; return; }
+      axisSet = true;
+    }
+    const rot = dx * ROT_FACTOR;
+    el.style.transform = 'translateX(' + dx + 'px) rotate(' + rot + 'deg)';
+    const prog = Math.min(Math.abs(dx) / SWIPE_THRESH, 1);
+    likeStamp.style.opacity = dx > 0 ? prog : 0;
+    nopeStamp.style.opacity = dx < 0 ? prog : 0;
+  }
+
+  function dragEnd(x) {
+    if (!isDrag || startX === null) return;
+    isDrag = false;
+    const dx = x - startX;
+    startX = null;
+    if (Math.abs(dx) >= SWIPE_THRESH) {
+      const dir     = dx > 0 ? 1 : -1;
+      const nextIdx = dir > 0 ? CAUSA_NEXT[idx] : 4;
+      causaSwipeExit(idx, dir, nextIdx);
+    } else {
+      el.style.transition = EASE;
+      el.style.transform  = 'translateX(0) rotate(0deg)';
+      likeStamp.style.opacity = 0;
+      nopeStamp.style.opacity = 0;
+    }
+  }
+
+  // Touch
+  el.addEventListener('touchstart', e => dragStart(e.touches[0].clientX, e.touches[0].clientY), { passive: true });
+  el.addEventListener('touchmove',  e => { if (isDrag) dragMove(e.touches[0].clientX, e.touches[0].clientY); }, { passive: true });
+  el.addEventListener('touchend',   e => dragEnd(e.changedTouches[0].clientX), { passive: true });
+
+  // Mouse (desktop)
+  el.addEventListener('mousedown', e => {
+    if (!e.target.closest('button, .cs-btn, .cs-back')) dragStart(e.clientX, e.clientY);
+  });
+  window.addEventListener('mousemove', e => { if (isDrag && cur === idx) dragMove(e.clientX, e.clientY); });
+  window.addEventListener('mouseup',   e => { if (isDrag && cur === idx) dragEnd(e.clientX); });
+});
 
 // ── SHOWCASE SCROLL REVEAL ──
 const cards = document.querySelectorAll('#showcase-grid .showcase-card');
