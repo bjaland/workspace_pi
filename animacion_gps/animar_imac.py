@@ -6,22 +6,35 @@ Bucle de 10 s:
   7.0-8.4  vuelven a los valores originales
   9.0-10   se recogen a cero para enlazar con el inicio
 
-Uso: python3 animar_imac.py  ->  gps_imac.mp4 y gps_imac.gif
+Uso:
+  python3 animar_imac.py           ->  gps_imac.mp4 / .gif       (imac_original.jpg, 2000x1333)
+  python3 animar_imac.py 1080      ->  gps_imac_1080.mp4 / .gif  (imac1080_original.jpg, 1920x1080)
 """
 import os
+import sys
 import cv2
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 import imageio_ffmpeg
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-SRC = os.path.join(HERE, "imac_original.jpg")
+# Maquetas: las coordenadas del script están medidas sobre imac_original.jpg;
+# (dx, dy) es el desplazamiento del dashboard en cada maqueta respecto a esa.
+PROFILES = {
+    "2000": dict(src="imac_original.jpg", out="gps_imac", dx=0, dy=0),
+    "1080": dict(src="imac1080_original.jpg", out="gps_imac_1080", dx=4, dy=-48),
+}
+PROF = PROFILES[sys.argv[1] if len(sys.argv) > 1 and sys.argv[1] in PROFILES else "2000"]
 FPS, DUR = 30, 10.0
 NF = int(FPS * DUR)
 S = 3  # superescalado del área del dashboard para dibujar texto suave
 
-orig = cv2.imread(SRC)[:, :, ::-1].copy()
-IH, IW = orig.shape[:2]
+photo = cv2.imread(os.path.join(HERE, PROF["src"]))[:, :, ::-1].copy()
+IH, IW = photo.shape[:2]
+DX, DY = PROF["dx"], PROF["dy"]
+# foto llevada a las coordenadas de referencia
+orig = cv2.warpAffine(photo, np.float32([[1, 0, -DX], [0, 1, -DY]]), (max(IW, 2000), max(IH, 1333)),
+                      borderMode=cv2.BORDER_REPLICATE)
 RX0, RY0, RX1, RY1 = 650, 225, 1475, 720  # área del dashboard
 region = orig[RY0:RY1, RX0:RX1]
 big0 = cv2.resize(region, None, fx=S, fy=S, interpolation=cv2.INTER_CUBIC)
@@ -120,7 +133,10 @@ _n, _lab, _st, _ = cv2.connectedComponentsWithStats(_dark.astype(np.uint8))
 TREE_BARS = []
 for i in range(1, _n):
     x, y, w, h, a = _st[i]
-    if 2 <= h <= 6 and w >= 3 and a >= 8:
+    tr = _t[min(y + h // 2, _t.shape[0] - 1), min(x + w + 2, _t.shape[1] - 1)]
+    solid = a >= 0.85 * w * h                       # rectángulo macizo, no un glifo
+    on_track = 170 <= tr.max() <= 230 and tr.max() - tr.min() < 25
+    if 2 <= h <= 6 and w >= 3 and a >= 8 and solid and on_track:
         TREE_BARS.append(dict(x=x + TREE[0], y=y + TREE[1], w=w, h=h,
                               track=col(min(x + TREE[0] + w + 3, 1456), y + TREE[1] + h // 2),
                               alt=float(rng.uniform(0.6, 1.35))))
@@ -244,24 +260,25 @@ def composite(frame, img):
     diff = np.abs(small.astype(np.int16) - small0.astype(np.int16)).max(2) > 3
     m = cv2.GaussianBlur(cv2.dilate(diff.astype(np.uint8) * 255, np.ones((3, 3), np.uint8)), (3, 3), 0)
     m = m.astype(np.float32)[..., None] / 255
-    reg = frame[RY0:RY1, RX0:RX1].astype(np.float32)
-    frame[RY0:RY1, RX0:RX1] = (reg * (1 - m) + small * m).astype(np.uint8)
+    ya, xa = RY0 + DY, RX0 + DX
+    reg = frame[ya:ya + RY1 - RY0, xa:xa + RX1 - RX0].astype(np.float32)
+    frame[ya:ya + RY1 - RY0, xa:xa + RX1 - RX0] = (reg * (1 - m) + small * m).astype(np.uint8)
 
 
 def main():
-    out = os.path.join(HERE, "gps_imac.mp4")
+    out = os.path.join(HERE, PROF["out"] + ".mp4")
     w = imageio_ffmpeg.write_frames(out, (IW, IH - IH % 2), fps=FPS, codec="libx264", quality=None, macro_block_size=1,
                                     output_params=["-crf", "18", "-preset", "slow", "-movflags", "+faststart"])
     w.send(None)
     for i in range(NF):
-        frame = orig.copy()
+        frame = photo.copy()
         composite(frame, render(i / FPS))
         w.send(np.ascontiguousarray(frame[:IH - IH % 2]))
     w.close()
     ff = imageio_ffmpeg.get_ffmpeg_exe()
     os.system(f'"{ff}" -y -loglevel error -i "{out}" -vf "fps=15,scale=900:-1:flags=lanczos,split[a][b];'
               f'[a]palettegen=max_colors=160:stats_mode=diff[p];[b][p]paletteuse=dither=bayer:bayer_scale=4:'
-              f'diff_mode=rectangle" "{os.path.join(HERE, "gps_imac.gif")}"')
+              f'diff_mode=rectangle" "{os.path.join(HERE, PROF["out"] + ".gif")}"')
 
 
 if __name__ == "__main__":
