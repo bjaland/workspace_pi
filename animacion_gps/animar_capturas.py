@@ -6,7 +6,11 @@ acercando mientras se navega:
             clic en "Current Status" que redibuja los indicadores y tooltips.
   - movil : app EuroGarage dentro de un marco de teléfono, con toques.
 
-Uso: python3 animar_capturas.py web|movil  ->  <nombre>.mp4 (1920x1080) y .gif
+  - operaciones / presupuesto / recambios : capturas 16:9 del flujo de
+            presupuesto (lista -> nuevo presupuesto -> recambios y cesta).
+
+Uso: python3 animar_capturas.py web|movil|operaciones|presupuesto|recambios
+     ->  <nombre>.mp4 (1920x1080) y .gif
 """
 import os
 import sys
@@ -250,6 +254,246 @@ class Movil:
         return frame
 
 
+class Pantalla:
+    """Base para capturas 16:9: la vista inicial llena el encuadre y la cámara se acerca."""
+    DUR = 8.5
+    pointer = "arrow"
+    CURSOR_BOX = None  # (x0, y0, x1, y1) del cursor que trae la captura, para borrarlo
+
+    def __init__(self):
+        self.screen = np.array(Image.open(os.path.join(HERE, self.src)).convert("RGB"))
+        if self.CURSOR_BOX:
+            x0, y0, x1, y1 = self.CURSOR_BOX
+            self.screen[y0:y1, x0:x1] = self.screen[y0 - 6, x0 - 6]
+        h, w = self.screen.shape[:2]
+        self.dev = np.dstack([self.screen, np.full((h, w), 255, np.uint8)])
+        self.off = (0, 0)
+        self.fit = OW / w
+        self.base = self.screen.astype(np.float32)
+        self.tips = []  # (rect, título, texto)
+
+    def cursor(self, t):
+        return path_pos(self.PATH, t)
+
+    # --- efectos reutilizables (sobre la captura, en float)
+    def tint(self, img, r, a, color=ACCENT):
+        if a > 0:
+            reg = img[r[1]:r[3], r[0]:r[2]]
+            reg[:] = reg * (1 - a) + np.array(color, np.float32) * a
+
+    def disc(self, img, c, rad, a, color=ACCENT):
+        if a > 0:
+            ov = np.zeros(img.shape[:2], np.float32)
+            cv2.circle(ov, c, rad, 1.0, -1, cv2.LINE_AA)
+            ov = ov[..., None] * a
+            img[:] = img * (1 - ov) + np.array(color, np.float32) * ov
+
+    def lift(self, img, r, h, press=0.0, M=18):
+        x0, y0, x1, y1 = r
+        if h <= 0 and press <= 0:
+            return
+        X0, Y0, X1, Y1 = x0 - M, y0 - M, x1 + M, y1 + M
+        patch = self.base[Y0:Y1, X0:X1]
+        ph, pw = patch.shape[:2]
+        scale = 1 + 0.025 * h - 0.015 * press
+        lift = -4 * h + 2 * press
+        P = 50
+        sh = np.zeros((ph + 2 * P, pw + 2 * P), np.float32)
+        cv2.rectangle(sh, (M + P + 4, int(M + P + 10 + lift)), (x1 - X0 + P - 4, int(y1 - Y0 + P + 12 + lift)), 1.0, -1)
+        sh = np.clip((cv2.GaussianBlur(sh, (0, 0), 11) - 0.03) / 0.97, 0, 1)
+        reg = img[Y0 - P:Y1 + P, X0 - P:X1 + P]
+        reg *= (1 - 0.18 * h * sh)[..., None]
+        A = cv2.getRotationMatrix2D((pw / 2, ph / 2), 0, scale)
+        A[1, 2] += lift
+        warped = cv2.warpAffine(patch, A, (pw, ph), flags=cv2.INTER_CUBIC)
+        m0 = np.zeros((ph, pw), np.float32)
+        m0[M:M + y1 - y0, M:M + x1 - x0] = 1
+        m = cv2.warpAffine(m0, A, (pw, ph), flags=cv2.INTER_LINEAR)[..., None]
+        img[Y0:Y1, X0:X1] = img[Y0:Y1, X0:X1] * (1 - m) + warped * m
+
+    def overlay(self, frame, A, k, t):
+        p = self.cursor(t)
+        q = A @ np.array([p[0] + self.off[0], p[1] + self.off[1], 1.0])
+        for rect, t1, t2 in self.tips:
+            h = hover(self.PATH, rect, t, lag=0.35)
+            if h > 0:
+                frame = tooltip(frame, q + [22, 26], t1, t2, h)
+        press = max([0.0] + [1 - abs(t - c) / 0.12 for c in self.CLICKS])
+        frame = draw_arrow(frame, q, 1.05 * k ** 0.55, press)
+        for c in self.CLICKS:
+            if c <= t < c + 0.6:
+                frame = ripple(frame, q, (t - c) / 0.6, 45 * k)
+        return frame
+
+
+def _rows(y0, pitch, n, x0, x1):
+    return [(x0, int(y0 + i * pitch), x1, int(y0 + (i + 1) * pitch)) for i in range(n)]
+
+
+class Operaciones(Pantalla):
+    name = "operaciones"
+    src = "captura_operaciones.webp"
+    CURSOR_BOX = (686, 986, 707, 1013)
+    DUR = 9.0
+
+    def __init__(self):
+        super().__init__()
+        cur = np.array
+        self.rows = _rows(514, 28, 6, 243, 1883)
+        self.actions = [(1888, r[1] + 5, 1966, r[3] - 3) for r in self.rows]
+        self.buttons = {"booking": (1373, 186, 1500, 220), "quotation": (1523, 186, 1662, 220),
+                        "checkin": (1686, 186, 1813, 220), "invoice": (1837, 186, 1976, 220)}
+        self.PATH = [
+            (0.0, cur([696.0, 1000.0])), (0.8, cur([696.0, 1000.0])),
+            (2.0, cur([720.0, 530.0])), (2.5, cur([720.0, 530.0])),
+            (3.1, cur([560.0, 614.0])), (3.7, cur([560.0, 614.0])),
+            (4.9, cur([1928.0, 616.0])), (5.5, cur([1928.0, 616.0])),
+            (6.2, cur([1760.0, 206.0])), (6.6, cur([1760.0, 206.0])),
+            (7.1, cur([1596.0, 206.0])), (self.DUR, cur([1596.0, 206.0])),
+        ]
+        self.CLICKS = [7.55]
+        f = self.fit
+        self.CAM = [
+            (0.0, f, 1000, 562), (0.9, f, 1000, 562),
+            (3.0, 1.3, 820, 600), (4.9, 1.4, 1400, 560),
+            (6.8, 1.75, 1600, 330), (self.DUR, 1.95, 1620, 290),
+        ]
+
+    def effects(self, img, t):
+        for r in self.rows:
+            self.tint(img, r, 0.07 * hover(self.PATH, r, t))
+        for r in self.actions:
+            self.tint(img, r, 0.12 * hover(self.PATH, r, t), (60, 60, 70))
+        for key, r in self.buttons.items():
+            h = hover(self.PATH, r, t)
+            press = max(0.0, 1 - abs(t - self.CLICKS[0]) / 0.12) if key == "quotation" else 0
+            self.tint(img, (r[0] + 2, r[1] + 2, r[2] - 2, r[3] - 2), 0.14 * h + 0.1 * press, (70, 175, 110))
+        return img
+
+
+class Presupuesto(Pantalla):
+    name = "nuevo_presupuesto"
+    src = "captura_presupuesto.webp"
+    CURSOR_BOX = (1236, 675, 1265, 716)
+    DUR = 8.5
+
+    def __init__(self):
+        super().__init__()
+        cur = np.array
+        cols = [481, 562, 644, 727, 798, 871, 949]
+        rows = [618, 645, 672, 700, 727]
+        self.days = {(c, r): (c - 16, r - 13, c + 16, r + 13) for c in cols for r in rows}
+        self.times = {lab: (1017, y - 14, 1548, y + 14) for lab, y in
+                      zip(["10:30", "11:00", "11:30", "12:00", "12:30", "13:00"], [594, 623, 652, 681, 711, 740])}
+        self.button = (1440, 790, 1563, 823)
+        self.PATH = [
+            (0.0, cur([1248.0, 696.0])), (0.7, cur([1248.0, 696.0])),
+            (1.8, cur([646.0, 702.0])), (2.15, cur([646.0, 702.0])),
+            (2.5, cur([729.0, 702.0])), (2.8, cur([729.0, 702.0])),
+            (3.1, cur([800.0, 702.0])), (3.6, cur([800.0, 702.0])),
+            (4.4, cur([1296.0, 654.0])), (4.7, cur([1296.0, 654.0])),
+            (5.0, cur([1296.0, 683.0])), (5.6, cur([1296.0, 683.0])),
+            (6.6, cur([1503.0, 808.0])), (self.DUR, cur([1503.0, 808.0])),
+        ]
+        self.CLICKS = [3.35, 5.3, 7.1]
+        self.tips = [((1440, 790, 1563, 823), "Viernes 26 junio 2026 · 12:00", "Crear presupuesto")]
+        f = self.fit
+        self.CAM = [
+            (0.0, f, 1000, 562), (0.7, f, 1000, 562),
+            (2.4, 1.5, 760, 580), (3.6, 1.5, 900, 620),
+            (5.2, 1.65, 1220, 650), (6.6, 1.8, 1330, 700),
+            (self.DUR, 1.9, 1360, 715),
+        ]
+
+    def effects(self, img, t):
+        for (c, r), rect in self.days.items():
+            self.disc(img, (c, r), 15, 0.13 * hover(self.PATH, rect, t))
+        sel = ease_io((t - self.CLICKS[1]) / 0.15)
+        for lab, r in self.times.items():
+            h = hover(self.PATH, r, t)
+            a = 0.05 * h + (0.13 * sel if lab == "12:00" else 0)
+            self.tint(img, r, a)
+            if lab == "12:00" and sel > 0:
+                self.tint(img, (r[0], r[1], r[0] + 4, r[3]), 0.9 * sel)
+        h = hover(self.PATH, self.button, t)
+        press = max(0.0, 1 - abs(t - self.CLICKS[2]) / 0.12)
+        b = self.button
+        self.tint(img, (b[0] + 2, b[1] + 2, b[2] - 2, b[3] - 2), 0.1 * h + 0.1 * press, (225, 70, 60))
+        return img
+
+
+class Recambios(Pantalla):
+    name = "recambios_cesta"
+    src = "captura_recambios.webp"
+    CURSOR_BOX = (1570, 548, 1591, 576)
+    DUR = 9.0
+    NEW_ROW = ["Brakes", "TRW", "GDB1550", "00000001.00", "42.10", "10.00", "7.96", "45.85"]
+    COLS = [1209, 1304, 1421, 1550, 1671, 1745, 1805, 1855]
+
+    def __init__(self):
+        super().__init__()
+        cur = np.array
+        xs = [(50, 224), (234, 407), (417, 590), (600, 774), (784, 957), (967, 1140)]
+        self.cards = [(a, 282, b, 586) for a, b in xs] + [(a, 596, b, 873) for a, b in xs]
+        self.link = (238, 411, 316, 425)
+        self.finish = (559, 1067, 621, 1100)
+        # fila nueva: plantilla a partir de una fila blanca (Filters), sin texto
+        tpl = self.base[138:161].copy()
+        tpl[:, 1204:1900] = 255
+        pil = Image.fromarray(tpl.astype(np.uint8))
+        d = ImageDraw.Draw(pil)
+        fnt = ImageFont.truetype(FONT, 11)
+        for txt, x in zip(self.NEW_ROW, self.COLS):
+            d.text((x, 5), txt, fill=(80, 80, 85), font=fnt)
+        self.row = np.array(pil).astype(np.float32)
+        self.T_ADD = 3.45
+        self.PATH = [
+            (0.0, cur([1579.0, 562.0])), (0.6, cur([1579.0, 562.0])),
+            (2.0, cur([330.0, 470.0])), (2.4, cur([330.0, 470.0])),
+            (2.95, cur([280.0, 419.0])), (3.3, cur([280.0, 419.0])),
+            (4.7, cur([1500.0, 197.0])), (5.6, cur([1500.0, 197.0])),
+            (7.2, cur([592.0, 1085.0])), (self.DUR, cur([592.0, 1085.0])),
+        ]
+        self.CLICKS = [3.2, 7.65]
+        self.tips = [((1203, 185, 1963, 208), "Añadido a la cesta", "Pastillas freno delanteras · 45,85 €")]
+        f = self.fit
+        self.CAM = [
+            (0.0, f, 1000, 562), (0.6, f, 1000, 562),
+            (2.2, 1.6, 420, 470), (3.3, 1.7, 400, 440),
+            (4.8, 1.5, 1500, 300), (5.8, 1.55, 1520, 290),
+            (7.3, 1.3, 800, 820), (self.DUR, 1.45, 700, 860),
+        ]
+
+    def effects(self, img, t):
+        for r in self.cards:
+            if r == self.cards[1]:
+                continue
+            self.lift(img, r, hover(self.PATH, r, t))
+        self.lift(img, self.cards[1], hover(self.PATH, self.cards[1], t),
+                  max(0.0, 1 - abs(t - self.CLICKS[0]) / 0.12))
+        h = hover(self.PATH, self.link, t)
+        if h > 0:
+            r = self.link
+            img[r[3]:r[3] + 1, r[0]:r[2]] = img[r[3]:r[3] + 1, r[0]:r[2]] * (1 - h) + ACCENT * h
+        # la cesta se abre para la nueva fila
+        if t >= self.T_ADD:
+            k = ease_io((t - self.T_ADD) / 0.35)
+            dy = int(round(23 * k))
+            y0, y1 = 185, 345
+            if dy:
+                img[y0 + dy:y1 + dy, 1195:1975] = self.base[y0:y1, 1195:1975]
+                row = self.row[:dy] if dy < 23 else self.row
+                a = ease_io((t - self.T_ADD - 0.2) / 0.3)
+                img[y0:y0 + len(row), 1195:1975] = (self.base[138:138 + len(row), 1195:1975] * (1 - a)
+                                                     + row[:, 1195:1975] * a)
+                flash = max(0.0, 1 - (t - self.T_ADD - 0.3) / 2.0) if t > self.T_ADD + 0.3 else a
+                self.tint(img, (1204, y0, 1962, y0 + dy), 0.22 * flash, (90, 190, 120))
+        b = self.finish
+        press = max(0.0, 1 - abs(t - self.CLICKS[1]) / 0.12)
+        self.tint(img, (b[0] + 2, b[1] + 2, b[2] - 2, b[3] - 2), 0.12 * hover(self.PATH, b, t) + 0.1 * press)
+        return img
+
+
 # ---------------------------------------------------------------- utilidades
 def path_pos(PATH, t):
     for (ta, pa), (tb, pb) in zip(PATH, PATH[1:]):
@@ -364,7 +608,8 @@ def render(prof, t, shadow):
 
 def main():
     which = sys.argv[1] if len(sys.argv) > 1 else "web"
-    prof = {"web": Web, "movil": Movil}[which]()
+    prof = {"web": Web, "movil": Movil, "operaciones": Operaciones, "presupuesto": Presupuesto,
+            "recambios": Recambios}[which]()
     prof.dev = np.pad(prof.dev, ((PAD, PAD), (PAD, PAD), (0, 0)))
     prof.off = (prof.off[0] + PAD, prof.off[1] + PAD)
     alpha = prof.dev[..., 3].astype(np.float32) / 255
