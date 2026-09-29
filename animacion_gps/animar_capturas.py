@@ -10,8 +10,10 @@ acercando mientras se navega:
             presupuesto (lista -> nuevo presupuesto -> recambios y cesta).
 
   - dashboard : captura panorámica del dashboard GPS Region.
+  - gms_operaciones / gms_recambios : pantallas de GMS (operaciones y
+            búsqueda gráfica de recambios).
 
-Uso: python3 animar_capturas.py web|movil|operaciones|presupuesto|recambios|dashboard
+Uso: python3 animar_capturas.py web|movil|operaciones|presupuesto|recambios|dashboard|gms_operaciones|gms_recambios
      ->  <nombre>.mp4 (1920x1080) y .gif
 """
 import os
@@ -555,6 +557,140 @@ class Dashboard(Pantalla):
         return img
 
 
+class GmsOperaciones(Pantalla):
+    name = "gms_operaciones"
+    src = "captura_gms_operaciones.webp"
+    CURSOR_BOX = (1258, 112, 1276, 136)
+    DUR = 9.5
+
+    def __init__(self):
+        super().__init__()
+        cur = np.array
+        xs = [(136, 368), (402, 635), (669, 901), (935, 1167), (1201, 1434), (1468, 1700), (1734, 1966)]
+        self.cards = [(a, 151, b, 252) for a, b in xs]
+        self.new_vehicle = (355, 95, 519, 137)
+        self.bookings = [(138, 370, 1024, 419), (138, 426, 1024, 475), (138, 481, 1024, 530)]
+        self.orders = [(1076, 368, 1955, 466), (1076, 472, 1955, 570), (1076, 577, 1955, 660)]
+        self.new_wo = (1846, 328, 1962, 350)
+        self.bars = [(526, 539), (631, 642)]  # filas de las barras con progreso
+        self.T_BARS = 4.9
+        self.PATH = [
+            (0.0, cur([1267.0, 124.0])), (0.7, cur([1267.0, 124.0])),
+            (1.6, cur([440.0, 118.0])), (2.0, cur([440.0, 118.0])),
+            (2.7, cur([790.0, 196.0])), (3.0, cur([790.0, 196.0])),
+            (3.4, cur([1056.0, 196.0])), (3.8, cur([1056.0, 196.0])),
+            (4.6, cur([420.0, 452.0])), (5.1, cur([420.0, 452.0])),
+            (6.2, cur([1520.0, 515.0])), (6.7, cur([1520.0, 515.0])),
+            (7.1, cur([1520.0, 618.0])), (7.5, cur([1520.0, 618.0])),
+            (8.2, cur([1905.0, 340.0])), (self.DUR, cur([1905.0, 340.0])),
+        ]
+        self.CLICKS = [8.55]
+        self.tips = [(self.orders[1], "OR 2025000042 · 3226GHX", "On Pause · 271 %"),
+                     (self.orders[2], "OR 2024000005 · 6067KVG", "Repaired · 56 %")]
+        f = self.fit
+        self.CAM = [
+            (0.0, f, 1000, 562), (0.7, f, 1000, 562),
+            (2.0, 1.45, 660, 250), (3.8, 1.5, 900, 280),
+            (5.0, 1.45, 600, 420), (6.4, 1.6, 1500, 480),
+            (7.6, 1.65, 1560, 470), (self.DUR, 1.8, 1640, 420),
+        ]
+
+    def effects(self, img, t):
+        for r in self.cards:
+            self.lift(img, r, hover(self.PATH, r, t))
+        b = self.new_vehicle
+        self.tint(img, b, 0.12 * hover(self.PATH, b, t), (255, 255, 255))
+        for r in self.bookings + self.orders:
+            self.tint(img, r, 0.05 * hover(self.PATH, r, t))
+        # las barras de progreso se recargan cuando la cámara llega a las órdenes
+        if self.T_BARS <= t < self.T_BARS + 1.6:
+            k = ease_io((t - self.T_BARS) / 1.4)
+            x0, x1 = 1095, 1884
+            xc = int(x0 + (x1 - x0) * k)
+            for y0, y1 in self.bars:
+                img[y0 - 2:y1 + 2, xc:x1] = self.base[421 - 2:421 + (y1 - y0) + 2, xc:x1]
+        b = self.new_wo
+        press = max(0.0, 1 - abs(t - self.CLICKS[0]) / 0.12)
+        self.tint(img, (b[0] + 2, b[1] + 2, b[2] - 2, b[3] - 2), 0.18 * hover(self.PATH, b, t) + 0.12 * press,
+                  (255, 255, 255))
+        return img
+
+
+class GmsRecambios(Pantalla):
+    name = "gms_recambios"
+    src = "captura_gms_recambios.webp"
+    CURSOR_BOX = (1742, 710, 1760, 734)
+    DUR = 9.5
+    NEW_ROW = [("0986479", 1587, True), ("BOSCH", 1638, False), ("Brake disc", 1682, False),
+               ("2,00", 1812, False), ("38,50", 1848, True), ("0,00", 1905, False), ("2", 1946, False)]
+
+    def __init__(self):
+        super().__init__()
+        cur = np.array
+        self.parts = {  # rect, nombre
+            "muelle": ((885, 282, 925, 352), "Coil spring", "Front axle · 2 uds."),
+            "amort": ((882, 385, 935, 512), "Shock absorber", "Front axle · 2 uds."),
+            "pinza": ((940, 688, 1048, 778), "Brake caliper", "Front left"),
+            "disco": ((1048, 632, 1114, 712), "Brake disc", "Ø 280 mm · ventilated"),
+        }
+        self.tips = [(r, a, b) for r, a, b in self.parts.values()]
+        self.save = (634, 1034, 809, 1079)
+        tpl = self.base[242:267].copy()
+        tpl[:, 1583:1950] = tpl[:, 1583:1584]
+        pil = Image.fromarray(tpl.astype(np.uint8))
+        d = ImageDraw.Draw(pil)
+        fr, fb = ImageFont.truetype(FONT, 9), ImageFont.truetype(FONTB, 9)
+        for txt, x, bold in self.NEW_ROW:
+            d.text((x, 7), txt, fill=(60, 60, 70), font=fb if bold else fr)
+        self.row = np.array(pil).astype(np.float32)
+        self.RY = 338  # la fila nueva entra aquí
+        self.T_ADD = 4.35
+        self.PATH = [
+            (0.0, cur([1750.0, 722.0])), (0.7, cur([1750.0, 722.0])),
+            (1.9, cur([906.0, 318.0])), (2.3, cur([906.0, 318.0])),
+            (2.7, cur([908.0, 450.0])), (3.1, cur([908.0, 450.0])),
+            (3.6, cur([990.0, 735.0])), (3.9, cur([990.0, 735.0])),
+            (4.2, cur([1082.0, 672.0])), (4.9, cur([1082.0, 672.0])),
+            (6.0, cur([1760.0, 350.0])), (6.6, cur([1760.0, 350.0])),
+            (8.0, cur([722.0, 1057.0])), (self.DUR, cur([722.0, 1057.0])),
+        ]
+        self.CLICKS = [4.25, 8.5]
+        f = self.fit
+        self.CAM = [
+            (0.0, f, 1000, 562), (0.7, f, 1000, 562),
+            (2.2, 1.6, 930, 420), (3.9, 1.65, 1000, 640),
+            (5.4, 1.6, 1500, 360), (6.6, 1.7, 1700, 300),
+            (8.0, 1.3, 1000, 800), (self.DUR, 1.45, 850, 860),
+        ]
+
+    def effects(self, img, t):
+        for key, (r, _, _) in self.parts.items():
+            h = hover(self.PATH, r, t)
+            if key == "disco":
+                h = max(h, ease_io((t - self.CLICKS[0]) / 0.2) * (1 - ease_io((t - self.CLICKS[0] - 1.2) / 0.5)))
+            if h > 0:
+                reg = img[r[1]:r[3], r[0]:r[2]]
+                lines = (self.base[r[1]:r[3], r[0]:r[2]].mean(-1) < 228).astype(np.float32)
+                lines = cv2.GaussianBlur(cv2.dilate(lines, np.ones((2, 2), np.uint8)), (3, 3), 0)[..., None]
+                a = lines * 0.6 * h
+                reg[:] = reg * (1 - a) + np.array([40, 110, 220], np.float32) * a
+        # nueva línea en la tabla de recambios
+        if t >= self.T_ADD:
+            k = ease_io((t - self.T_ADD) / 0.35)
+            dy = int(round(25 * k))
+            y0, y1, x0, x1 = self.RY, 560, 1578, 1952
+            if dy:
+                img[y0 + dy:y1 + dy, x0:x1] = self.base[y0:y1, x0:x1]
+                a = ease_io((t - self.T_ADD - 0.2) / 0.3)
+                img[y0:y0 + dy, x0:x1] = self.base[242:242 + dy, x0:x1] * (1 - a) + self.row[:dy, x0:x1] * a
+                flash = max(0.0, 1 - (t - self.T_ADD - 0.3) / 2.0) if t > self.T_ADD + 0.3 else a
+                self.tint(img, (1582, y0, 1950, y0 + dy), 0.25 * flash, (90, 190, 120))
+        b = self.save
+        press = max(0.0, 1 - abs(t - self.CLICKS[1]) / 0.12)
+        self.tint(img, b, 0.15 * hover(self.PATH, b, t) + 0.12 * press, (255, 255, 255))
+        return img
+
+
 # ---------------------------------------------------------------- utilidades
 def path_pos(PATH, t):
     for (ta, pa), (tb, pb) in zip(PATH, PATH[1:]):
@@ -670,7 +806,8 @@ def render(prof, t, shadow):
 def main():
     which = sys.argv[1] if len(sys.argv) > 1 else "web"
     prof = {"web": Web, "movil": Movil, "operaciones": Operaciones, "presupuesto": Presupuesto,
-            "recambios": Recambios, "dashboard": Dashboard}[which]()
+            "recambios": Recambios, "dashboard": Dashboard,
+            "gms_operaciones": GmsOperaciones, "gms_recambios": GmsRecambios}[which]()
     prof.dev = np.pad(prof.dev, ((PAD, PAD), (PAD, PAD), (0, 0)))
     prof.off = (prof.off[0] + PAD, prof.off[1] + PAD)
     alpha = prof.dev[..., 3].astype(np.float32) / 255
