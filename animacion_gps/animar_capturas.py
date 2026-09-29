@@ -9,7 +9,9 @@ acercando mientras se navega:
   - operaciones / presupuesto / recambios : capturas 16:9 del flujo de
             presupuesto (lista -> nuevo presupuesto -> recambios y cesta).
 
-Uso: python3 animar_capturas.py web|movil|operaciones|presupuesto|recambios
+  - dashboard : captura panorámica del dashboard GPS Region.
+
+Uso: python3 animar_capturas.py web|movil|operaciones|presupuesto|recambios|dashboard
      ->  <nombre>.mp4 (1920x1080) y .gif
 """
 import os
@@ -494,6 +496,65 @@ class Recambios(Pantalla):
         return img
 
 
+class Dashboard(Pantalla):
+    name = "gps_dashboard_navegacion"
+    src = "captura_gps_dashboard.webp"
+    DUR = 11.0
+
+    def __init__(self):
+        super().__init__()
+        cur = np.array
+        self.tab = (1067, 63, 1279, 91)
+        self.kpis = [(403, 193, 547, 232), (557, 193, 697, 232), (703, 193, 847, 232), (855, 193, 990, 232)]
+        self.bars = [(526, 328, 599, 471), (686, 322, 759, 471)]
+        self.donut = ((1159, 315), 48, (1105, 262, 1215, 368))
+        self.nodes = [(1186, 541, 1300, 586), (1336, 541, 1452, 586)]
+        self.tips = [
+            ((520, 318, 605, 471), "Q1 2026", "€ 1,002,373,832"),
+            ((680, 312, 765, 471), "Q2 2026", "€ 1,047,168,905"),
+            (self.donut[2], "Pending", "2,682 validaciones"),
+            (self.nodes[0], "Supplier", "€ 394,763,174"),
+            (self.nodes[1], "Brand", "€ 146,433,223"),
+        ]
+        self.PATH = [
+            (0.0, cur([1850.0, 610.0])), (0.8, cur([1850.0, 610.0])),
+            (1.8, cur([1175.0, 80.0])), (2.2, cur([1175.0, 80.0])),
+            (3.2, cur([480.0, 216.0])), (3.6, cur([480.0, 216.0])),
+            (4.3, cur([566.0, 405.0])), (4.9, cur([566.0, 405.0])),
+            (5.3, cur([724.0, 400.0])), (6.0, cur([724.0, 400.0])),
+            (6.9, cur([1190.0, 292.0])), (7.6, cur([1190.0, 292.0])),
+            (8.5, cur([1232.0, 566.0])), (9.2, cur([1232.0, 566.0])),
+            (9.8, cur([1382.0, 566.0])), (self.DUR, cur([1382.0, 566.0])),
+        ]
+        self.CLICKS = [9.0]
+        self.CAM = [
+            (0.0, 0.92, 1000, 463), (0.8, 0.92, 1000, 463),
+            (1.9, 1.2, 1150, 400), (3.2, 1.45, 620, 330),
+            (5.3, 1.6, 650, 380), (6.9, 1.55, 1000, 360),
+            (8.5, 1.7, 1300, 600), (self.DUR, 1.85, 1330, 610),
+        ]
+
+    def effects(self, img, t):
+        self.tint(img, self.tab, 0.08 * hover(self.PATH, self.tab, t))
+        for r in self.kpis:
+            self.tint(img, r, 0.07 * hover(self.PATH, r, t))
+        hb = [hover(self.PATH, (r[0] - 6, r[1] - 10, r[2] + 6, r[3]), t) for r in self.bars]
+        for i, r in enumerate(self.bars):
+            other = max(hb[:i] + hb[i + 1:])  # atenúa la barra que no está bajo el cursor
+            self.tint(img, r, 0.45 * other * (1 - hb[i]), (255, 255, 255))
+        c, rad, rect = self.donut
+        h = hover(self.PATH, rect, t)
+        if h > 0:
+            ov = np.zeros(img.shape[:2], np.float32)
+            cv2.circle(ov, c, rad + 8, 1.0, 5, cv2.LINE_AA)
+            ov = cv2.GaussianBlur(ov, (0, 0), 2)[..., None] * 0.35 * h
+            img[:] = img * (1 - ov) + np.array([240, 160, 90], np.float32) * ov
+        for i, r in enumerate(self.nodes):
+            press = max(0.0, 1 - abs(t - self.CLICKS[0]) / 0.12) if i == 0 else 0
+            self.tint(img, r, 0.07 * hover(self.PATH, r, t) + 0.08 * press)
+        return img
+
+
 # ---------------------------------------------------------------- utilidades
 def path_pos(PATH, t):
     for (ta, pa), (tb, pb) in zip(PATH, PATH[1:]):
@@ -609,7 +670,7 @@ def render(prof, t, shadow):
 def main():
     which = sys.argv[1] if len(sys.argv) > 1 else "web"
     prof = {"web": Web, "movil": Movil, "operaciones": Operaciones, "presupuesto": Presupuesto,
-            "recambios": Recambios}[which]()
+            "recambios": Recambios, "dashboard": Dashboard}[which]()
     prof.dev = np.pad(prof.dev, ((PAD, PAD), (PAD, PAD), (0, 0)))
     prof.off = (prof.off[0] + PAD, prof.off[1] + PAD)
     alpha = prof.dev[..., 3].astype(np.float32) / 255
